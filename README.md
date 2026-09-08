@@ -35,10 +35,11 @@ de buscas salvas.
   Instagram/LinkedIn — mas resultado estável, sem risco de bloqueio de conta/IP.
   Scraping como fonte complementar fica registrado como *should have* futuro, a
   avaliar risco antes de implementar.
-- **Nota técnica:** o endpoint Text Search da Places API não retorna telefone —
-  isso exigiria uma chamada extra ao Place Details por resultado (custo maior).
-  Enquanto isso não é implementado, `telefone` vem vazio nos resultados reais (só
-  o mock de desenvolvimento preenche telefone fake).
+- **Nota técnica:** a integração usa a **Places API (New)** — `POST
+  places:searchText` com a chave no header `X-Goog-Api-Key` (não em query
+  string) e um `X-Goog-FieldMask` explícito. Diferente da API legada, o Text
+  Search da versão nova já retorna `internationalPhoneNumber` direto, sem
+  chamada extra ao Place Details.
 
 ## Stack
 
