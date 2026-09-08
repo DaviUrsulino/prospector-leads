@@ -21,7 +21,10 @@ class Busca(Base):
     criada_em = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     leads = relationship(
-        "LeadEncontrado", back_populates="busca", cascade="all, delete-orphan"
+        "LeadEncontrado",
+        back_populates="busca",
+        cascade="all, delete-orphan",
+        order_by="LeadEncontrado.ordem",
     )
 
 
@@ -37,5 +40,13 @@ class LeadEncontrado(Base):
     place_id = Column(String, nullable=True)
     link_perfil = Column(String, nullable=True)
     favorito = Column(Boolean, nullable=False, default=False)
+    website = Column(String, nullable=True)
+    instagram = Column(String, nullable=True)
+    linkedin = Column(String, nullable=True)
+    facebook = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    whatsapp_direto = Column(String, nullable=True)
+    fonte = Column(String, nullable=False, default="google_places")
+    ordem = Column(Integer, nullable=False, default=0)
 
     busca = relationship("Busca", back_populates="leads")

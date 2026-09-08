@@ -1,11 +1,18 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export function TopNav() {
   return (
     <header className="topnav">
       <Link href="/" className="brand">
-        <span className="mark">PL</span>
-        Prospector de Leads
+        <Image
+          src="/brand/vivavoz-logo.png"
+          alt="Viva Voz Podcast"
+          width={1024}
+          height={261}
+          priority
+          className="brand-logo"
+        />
       </Link>
       <nav>
         <Link href="/">Dashboard</Link>

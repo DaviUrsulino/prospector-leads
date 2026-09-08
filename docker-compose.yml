@@ -32,8 +32,12 @@ services:
   frontend:
     build: ./frontend
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
       API_URL: http://backend:8000
+      # Em produção (ex: Easypanel), defina as duas abaixo pra exigir login
+      # (usuário/senha compartilhados do time) antes de acessar o app. Sem
+      # elas, o app fica aberto — ok em dev local, não em produção.
+      # BASIC_AUTH_USER: equipe
+      # BASIC_AUTH_PASSWORD: troque-isso
     depends_on:
       - backend
     ports:

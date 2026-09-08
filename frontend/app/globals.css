@@ -49,17 +49,9 @@ body {
   letter-spacing: -0.01em;
 }
 
-.topnav .brand .mark {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--brand);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 0.82rem;
-  font-weight: 700;
+.topnav .brand-logo {
+  width: 224px; /* mesmo tamanho ("md") usado no Podcut */
+  height: auto;
 }
 
 .topnav nav {
@@ -199,6 +191,22 @@ tbody tr:hover {
   font-size: 0.76rem;
   font-weight: 600;
   text-transform: capitalize;
+}
+
+.redes-sociais {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.redes-sociais a {
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+td .badge {
+  margin-left: 0.4rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.65rem;
 }
 
 .result-summary {
