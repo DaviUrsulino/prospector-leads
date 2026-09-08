@@ -8,6 +8,11 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
   const [filtro, setFiltro] = useState("");
   const [soFavoritos, setSoFavoritos] = useState(false);
 
+  function urlWhatsapp(telefone: string): string {
+    const digitos = telefone.replace(/\D/g, "");
+    return `https://wa.me/${digitos}`;
+  }
+
   const leadsFiltrados = useMemo(() => {
     const termo = filtro.trim().toLowerCase();
     return leads.filter((lead) => {
@@ -79,7 +84,20 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
                   </button>
                 </td>
                 <td>{lead.nome}</td>
-                <td>{lead.telefone ?? "—"}</td>
+                <td>
+                  {lead.telefone ? (
+                    <a
+                      href={urlWhatsapp(lead.telefone)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="whatsapp-link"
+                    >
+                      {lead.telefone}
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>{lead.endereco ?? "—"}</td>
                 <td>
                   {lead.link_perfil ? (

@@ -68,6 +68,17 @@ def test_alternar_favorito(client):
     assert resp.json()["favorito"] is False
 
 
+def test_excluir_busca(client):
+    criada = client.post(
+        "/buscas",
+        json={"cidade": "Porto Alegre", "termo": "esteticista", "quantidade_alvo": 1},
+    ).json()
+
+    resp = client.delete(f"/buscas/{criada['id']}")
+    assert resp.status_code == 204
+    assert client.get(f"/buscas/{criada['id']}").status_code == 404
+
+
 def test_export_csv(client):
     criada = client.post(
         "/buscas",

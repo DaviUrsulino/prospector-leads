@@ -100,6 +100,15 @@ def alternar_favorito(busca_id: str, lead_id: str, db: Session = Depends(get_db)
     return lead
 
 
+@router.delete("/{busca_id}", status_code=204)
+def excluir_busca(busca_id: str, db: Session = Depends(get_db)):
+    busca = db.query(models.Busca).filter(models.Busca.id == busca_id).first()
+    if not busca:
+        raise HTTPException(status_code=404, detail="Busca não encontrada")
+    db.delete(busca)
+    db.commit()
+
+
 @router.get("/{busca_id}/export")
 def exportar_busca_csv(busca_id: str, db: Session = Depends(get_db)):
     busca = db.query(models.Busca).filter(models.Busca.id == busca_id).first()

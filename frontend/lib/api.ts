@@ -62,6 +62,13 @@ export function urlExportBusca(id: string): string {
   return `${API_URL}/buscas/${id}/export`;
 }
 
+export async function excluirBusca(id: string): Promise<void> {
+  const resp = await fetch(`${API_URL}/buscas/${id}`, { method: "DELETE" });
+  if (!resp.ok) {
+    throw new Error(`Falha ao excluir busca: ${resp.status}`);
+  }
+}
+
 export async function alternarFavorito(buscaId: string, leadId: string): Promise<Lead> {
   const resp = await fetch(`${API_URL}/buscas/${buscaId}/leads/${leadId}/favorito`, {
     method: "PATCH",
