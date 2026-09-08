@@ -95,10 +95,9 @@ export async function obterEstatisticas(): Promise<Estatisticas> {
   return resp.json();
 }
 
-export const ESPECIALIDADE_LABELS: Record<string, string> = {
-  dentista: "Dentista",
-  medico: "Médico",
-  esteticista: "Esteticista",
-  biomedico: "Biomédico",
-  clinica_geral: "Clínica geral",
-};
+export function formatarEspecialidade(termo: string): string {
+  return termo
+    .split(" ")
+    .map((palavra) => palavra.charAt(0).toUpperCase() + palavra.slice(1))
+    .join(" ");
+}

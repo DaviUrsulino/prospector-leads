@@ -314,6 +314,30 @@ button:disabled {
   text-decoration: underline;
 }
 
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.delete-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  width: auto;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: #2e1c15;
+  color: #f0a074;
+  border-color: #4a2e1f;
+}
+
 .favorite-btn {
   background: transparent;
   border: none;

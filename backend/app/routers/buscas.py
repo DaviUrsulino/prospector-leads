@@ -24,12 +24,12 @@ async def criar_busca(
     db: Session = Depends(get_db),
 ):
     leads_encontrados = await buscar_leads(
-        payload.cidade, payload.termo.value, payload.quantidade_alvo
+        payload.cidade, payload.termo, payload.quantidade_alvo
     )
 
     busca = models.Busca(
         cidade=payload.cidade,
-        termo=payload.termo.value,
+        termo=payload.termo,
         quantidade_alvo=payload.quantidade_alvo,
     )
     busca.leads = [models.LeadEncontrado(**lead) for lead in leads_encontrados]

@@ -1,21 +1,12 @@
 import uuid
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class Especialidade(str, Enum):
-    dentista = "dentista"
-    medico = "medico"
-    esteticista = "esteticista"
-    biomedico = "biomedico"
-    clinica_geral = "clinica_geral"
-
-
 class BuscaCreate(BaseModel):
     cidade: str = Field(min_length=2, max_length=120)
-    termo: Especialidade
+    termo: str = Field(min_length=2, max_length=80)
     quantidade_alvo: int = Field(gt=0, le=200)
 
 

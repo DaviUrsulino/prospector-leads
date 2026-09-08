@@ -10,10 +10,19 @@ def test_criar_busca_retorna_leads_mockados(client):
     assert all(lead["especialidade"] == "dentista" for lead in body["leads"])
 
 
-def test_criar_busca_com_termo_invalido_retorna_422(client):
+def test_criar_busca_aceita_especialidade_livre(client):
     resp = client.post(
         "/buscas",
-        json={"cidade": "São Paulo", "termo": "veterinario", "quantidade_alvo": 5},
+        json={"cidade": "São Paulo", "termo": "ortopedista", "quantidade_alvo": 3},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["termo"] == "ortopedista"
+
+
+def test_criar_busca_com_termo_curto_retorna_422(client):
+    resp = client.post(
+        "/buscas",
+        json={"cidade": "São Paulo", "termo": "a", "quantidade_alvo": 5},
     )
     assert resp.status_code == 422
 

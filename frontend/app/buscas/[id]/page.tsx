@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ESPECIALIDADE_LABELS, obterBusca, urlExportBusca } from "@/lib/api";
+import { formatarEspecialidade, obterBusca, urlExportBusca } from "@/lib/api";
 import { LeadsTable } from "./LeadsTable";
 
 export default async function BuscaDetalhePage({ params }: { params: { id: string } }) {
   const busca = await obterBusca(params.id);
-  const especialidade = ESPECIALIDADE_LABELS[busca.termo] ?? busca.termo;
+  const especialidade = formatarEspecialidade(busca.termo);
 
   return (
     <main>

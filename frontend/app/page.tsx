@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ESPECIALIDADE_LABELS, obterEstatisticas } from "@/lib/api";
+import { obterEstatisticas } from "@/lib/api";
+import { HistoricoTable } from "./buscas/HistoricoTable";
 
 export default async function HomePage() {
   const stats = await obterEstatisticas();
@@ -37,36 +38,7 @@ export default async function HomePage() {
             Nenhuma busca ainda. <Link href="/buscar">Faça a primeira busca</Link>.
           </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Cidade</th>
-                <th>Especialidade</th>
-                <th>Alvo</th>
-                <th>Data</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.ultimas_buscas.map((b) => (
-                <tr key={b.id}>
-                  <td>{b.cidade}</td>
-                  <td>
-                    <span className="badge">
-                      {ESPECIALIDADE_LABELS[b.termo] ?? b.termo}
-                    </span>
-                  </td>
-                  <td>{b.quantidade_alvo}</td>
-                  <td>{new Date(b.criada_em).toLocaleString("pt-BR")}</td>
-                  <td>
-                    <Link className="link-quiet" href={`/buscas/${b.id}`}>
-                      ver →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <HistoricoTable buscasIniciais={stats.ultimas_buscas} />
         )}
       </div>
     </main>

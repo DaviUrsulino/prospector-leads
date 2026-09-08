@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ESPECIALIDADE_LABELS, excluirBusca, type Busca } from "@/lib/api";
+import { excluirBusca, formatarEspecialidade, type Busca } from "@/lib/api";
 
 export function HistoricoTable({ buscasIniciais }: { buscasIniciais: Busca[] }) {
   const router = useRouter();
@@ -38,7 +38,6 @@ export function HistoricoTable({ buscasIniciais }: { buscasIniciais: Busca[] }) 
           <th>Alvo</th>
           <th>Data</th>
           <th></th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -46,18 +45,16 @@ export function HistoricoTable({ buscasIniciais }: { buscasIniciais: Busca[] }) 
           <tr key={b.id}>
             <td>{b.cidade}</td>
             <td>
-              <span className="badge">{ESPECIALIDADE_LABELS[b.termo] ?? b.termo}</span>
+              <span className="badge">{formatarEspecialidade(b.termo)}</span>
             </td>
             <td>{b.quantidade_alvo}</td>
             <td>{new Date(b.criada_em).toLocaleString("pt-BR")}</td>
-            <td>
+            <td className="row-actions">
               <Link className="link-quiet" href={`/buscas/${b.id}`}>
                 ver →
               </Link>
-            </td>
-            <td>
-              <button className="favorite-btn" title="Excluir" onClick={() => handleExcluir(b.id)}>
-                🗑
+              <button className="delete-btn" onClick={() => handleExcluir(b.id)}>
+                🗑 Excluir
               </button>
             </td>
           </tr>
