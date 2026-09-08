@@ -11,6 +11,7 @@ export function TopNav() {
           width={1024}
           height={261}
           priority
+          unoptimized
           className="brand-logo"
         />
       </Link>
