@@ -21,6 +21,13 @@ class LeadEncontradoOut(BaseModel):
     place_id: str | None
     link_perfil: str | None
     favorito: bool
+    website: str | None
+    instagram: str | None
+    linkedin: str | None
+    facebook: str | None
+    email: str | None
+    whatsapp_direto: str | None
+    fonte: str
 
 
 class BuscaOut(BaseModel):

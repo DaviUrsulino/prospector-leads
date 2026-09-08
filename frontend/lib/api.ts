@@ -1,9 +1,12 @@
-// No servidor (Server Components, dentro do container) usa a URL interna do
-// Docker; no navegador usa a URL pública, que aponta pra porta exposta no host.
+// No servidor (Server Components, rodando dentro do container) fala direto
+// com o backend pela rede interna do Docker. No navegador, fala só com o
+// próprio Next (mesma origem), que repassa pro backend via rewrite — assim
+// não importa qual domínio/porta pública o app está usando, e a autenticação
+// do middleware cobre essas chamadas também.
 const API_URL =
   typeof window === "undefined"
     ? process.env.API_URL ?? "http://backend:8000"
-    : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+    : "/api/backend";
 
 export type Lead = {
   id: string;
@@ -14,6 +17,13 @@ export type Lead = {
   place_id: string | null;
   link_perfil: string | null;
   favorito: boolean;
+  website: string | null;
+  instagram: string | null;
+  linkedin: string | null;
+  facebook: string | null;
+  email: string | null;
+  whatsapp_direto: string | null;
+  fonte: string;
 };
 
 export type Busca = {
@@ -59,7 +69,9 @@ export async function obterBusca(id: string): Promise<BuscaComLeads> {
 }
 
 export function urlExportBusca(id: string): string {
-  return `${API_URL}/buscas/${id}/export`;
+  // Sempre relativo: é um link clicado pelo navegador, então precisa passar
+  // pelo proxy do Next independente de onde essa função foi chamada.
+  return `/api/backend/buscas/${id}/export`;
 }
 
 export async function excluirBusca(id: string): Promise<void> {

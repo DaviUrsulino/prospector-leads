@@ -13,6 +13,10 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
     return `https://wa.me/${digitos}`;
   }
 
+  function urlWhatsappDireto(numero: string): string {
+    return `https://wa.me/${numero}`;
+  }
+
   const leadsFiltrados = useMemo(() => {
     const termo = filtro.trim().toLowerCase();
     return leads.filter((lead) => {
@@ -66,8 +70,13 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
               <th></th>
               <th>Nome</th>
               <th>Telefone</th>
+              <th>WhatsApp direto</th>
               <th>Endereço</th>
-              <th>Link</th>
+              <th>E-mail</th>
+              <th>Instagram</th>
+              <th>Facebook</th>
+              <th>Maps</th>
+              <th>LinkedIn</th>
             </tr>
           </thead>
           <tbody>
@@ -83,7 +92,14 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
                     {lead.favorito ? "★" : "☆"}
                   </button>
                 </td>
-                <td>{lead.nome}</td>
+                <td>
+                  {lead.nome}
+                  {lead.fonte !== "google_places" && (
+                    <span className="badge" title="Encontrado via fonte alternativa (OpenStreetMap)">
+                      {lead.fonte.toUpperCase()}
+                    </span>
+                  )}
+                </td>
                 <td>
                   {lead.telefone ? (
                     <a
@@ -98,10 +114,58 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
                     "—"
                   )}
                 </td>
+                <td>
+                  {lead.whatsapp_direto ? (
+                    <a
+                      href={urlWhatsappDireto(lead.whatsapp_direto)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="whatsapp-link"
+                    >
+                      abrir
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>{lead.endereco ?? "—"}</td>
+                <td>
+                  {lead.email ? (
+                    <a href={`mailto:${lead.email}`}>{lead.email}</a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td>
+                  {lead.instagram ? (
+                    <a href={lead.instagram} target="_blank" rel="noreferrer">
+                      abrir
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td>
+                  {lead.facebook ? (
+                    <a href={lead.facebook} target="_blank" rel="noreferrer">
+                      abrir
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>
                   {lead.link_perfil ? (
                     <a href={lead.link_perfil} target="_blank" rel="noreferrer">
+                      abrir
+                    </a>
+                  ) : (
+                    "—"
+                  )}
+                </td>
+                <td>
+                  {lead.linkedin ? (
+                    <a href={lead.linkedin} target="_blank" rel="noreferrer">
                       abrir
                     </a>
                   ) : (

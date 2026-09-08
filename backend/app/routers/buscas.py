@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db
+from app.services.enrichment import enriquecer_leads, ordenar_por_completude
+from app.services.osm_fallback import buscar_leads_osm
 from app.services.places import buscar_leads
 
 router = APIRouter(prefix="/buscas", tags=["buscas"])
@@ -26,6 +28,13 @@ async def criar_busca(
     leads_encontrados = await buscar_leads(
         payload.cidade, payload.termo, payload.quantidade_alvo
     )
+
+    faltam = payload.quantidade_alvo - len(leads_encontrados)
+    if faltam > 0:
+        leads_encontrados += await buscar_leads_osm(payload.cidade, payload.termo, faltam)
+
+    leads_encontrados = await enriquecer_leads(leads_encontrados)
+    leads_encontrados = ordenar_por_completude(leads_encontrados)
 
     busca = models.Busca(
         cidade=payload.cidade,
@@ -118,7 +127,21 @@ def exportar_busca_csv(busca_id: str, db: Session = Depends(get_db)):
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(
-        ["nome", "telefone", "endereco", "especialidade", "link_perfil", "favorito"]
+        [
+            "nome",
+            "telefone",
+            "endereco",
+            "especialidade",
+            "link_perfil",
+            "favorito",
+            "website",
+            "instagram",
+            "linkedin",
+            "facebook",
+            "email",
+            "whatsapp_direto",
+            "fonte",
+        ]
     )
     for lead in busca.leads:
         writer.writerow(
@@ -129,12 +152,21 @@ def exportar_busca_csv(busca_id: str, db: Session = Depends(get_db)):
                 lead.especialidade,
                 lead.link_perfil,
                 lead.favorito,
+                lead.website,
+                lead.instagram,
+                lead.linkedin,
+                lead.facebook,
+                lead.email,
+                lead.whatsapp_direto,
+                lead.fonte,
             ]
         )
-    buffer.seek(0)
+    # BOM UTF-8 na frente: sem isso o Excel (principalmente em PT-BR) abre
+    # com encoding errado e os acentos saem trocados.
+    conteudo = "﻿" + buffer.getvalue()
 
     return StreamingResponse(
-        buffer,
-        media_type="text/csv",
+        iter([conteudo.encode("utf-8")]),
+        media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f"attachment; filename=busca-{busca_id}.csv"},
     )

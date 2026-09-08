@@ -1,8 +1,13 @@
+import asyncio
+
 import httpx
 
 from app.config import settings
 
 PLACES_SEARCH_TEXT_URL = "https://places.googleapis.com/v1/places:searchText"
+# A Places API (New) demora um pouco pra ativar o nextPageToken; usar antes
+# disso devolve erro e derruba a página seguinte à toa (já paga).
+DELAY_PROXIMA_PAGINA_SEGUNDOS = 2
 FIELD_MASK = ",".join(
     [
         "places.id",
@@ -10,6 +15,7 @@ FIELD_MASK = ",".join(
         "places.formattedAddress",
         "places.internationalPhoneNumber",
         "places.googleMapsUri",
+        "places.websiteUri",
     ]
 )
 PAGE_SIZE = 20  # máximo aceito pelo Text Search (New) por página
@@ -25,6 +31,8 @@ def _mock_leads(cidade: str, termo: str, quantidade_alvo: int) -> list[dict]:
             "especialidade": termo,
             "place_id": f"mock-{cidade}-{termo}-{i}",
             "link_perfil": None,
+            "website": None,
+            "fonte": "google_places",
         }
         for i in range(min(quantidade_alvo, 20))
     ]
@@ -48,9 +56,19 @@ async def buscar_leads(cidade: str, termo: str, quantidade_alvo: int) -> list[di
     leads: list[dict] = []
 
     async with httpx.AsyncClient(timeout=10) as client:
+        primeira_pagina = True
         while len(leads) < quantidade_alvo:
+            if not primeira_pagina:
+                await asyncio.sleep(DELAY_PROXIMA_PAGINA_SEGUNDOS)
+            primeira_pagina = False
+
             resp = await client.post(PLACES_SEARCH_TEXT_URL, headers=headers, json=body)
-            resp.raise_for_status()
+            if not leads:
+                # primeira página: erro aqui é real, não tem leads pra preservar
+                resp.raise_for_status()
+            elif resp.status_code >= 400:
+                # já temos leads pagos da(s) página(s) anterior(es); não jogar fora
+                break
             data = resp.json()
 
             for place in data.get("places", []):
@@ -64,6 +82,8 @@ async def buscar_leads(cidade: str, termo: str, quantidade_alvo: int) -> list[di
                         "especialidade": termo,
                         "place_id": place.get("id"),
                         "link_perfil": place.get("googleMapsUri"),
+                        "website": place.get("websiteUri"),
+                        "fonte": "google_places",
                     }
                 )
 

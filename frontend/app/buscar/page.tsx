@@ -4,6 +4,31 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { criarBusca } from "@/lib/api";
 
+const CIDADES = [
+  "Brasília",
+  "São Paulo",
+  "Rio de Janeiro",
+  "Belo Horizonte",
+  "Salvador",
+  "Fortaleza",
+  "Recife",
+  "Porto Alegre",
+  "Curitiba",
+  "Manaus",
+  "Goiânia",
+  "Belém",
+  "Campinas",
+  "São Luís",
+  "Natal",
+  "Campo Grande",
+  "João Pessoa",
+  "Teresina",
+  "Maceió",
+  "Cuiabá",
+  "Florianópolis",
+  "Vitória",
+];
+
 const SEGMENTOS: Record<string, string[]> = {
   Dentista: [
     "Ortodontia",
@@ -91,10 +116,10 @@ const SEGMENTOS: Record<string, string[]> = {
 
 export default function BuscarPage() {
   const router = useRouter();
-  const [cidade, setCidade] = useState("");
+  const [cidade, setCidade] = useState("Brasília");
   const [segmento, setSegmento] = useState<keyof typeof SEGMENTOS>("Dentista");
   const [termo, setTermo] = useState("");
-  const [quantidade, setQuantidade] = useState(50);
+  const [quantidadeTexto, setQuantidadeTexto] = useState("50");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
@@ -103,6 +128,13 @@ export default function BuscarPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
+
+    const quantidade = Number(quantidadeTexto);
+    if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 200) {
+      setErro("Quantidade de contatos precisa ser um número entre 1 e 200.");
+      return;
+    }
+
     setEnviando(true);
     try {
       const busca = await criarBusca({
@@ -128,11 +160,17 @@ export default function BuscarPage() {
         <label>
           Cidade
           <input
+            list="sugestoes-cidade"
             value={cidade}
             onChange={(e) => setCidade(e.target.value)}
-            placeholder="São Paulo"
+            placeholder="Digite ou escolha uma cidade"
             required
           />
+          <datalist id="sugestoes-cidade">
+            {CIDADES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
         </label>
 
         <label>
@@ -174,8 +212,8 @@ export default function BuscarPage() {
             type="number"
             min={1}
             max={200}
-            value={quantidade}
-            onChange={(e) => setQuantidade(Number(e.target.value))}
+            value={quantidadeTexto}
+            onChange={(e) => setQuantidadeTexto(e.target.value)}
             required
           />
         </label>

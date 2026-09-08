@@ -1,3 +1,64 @@
+def test_criar_busca_enriquece_leads_com_website(client, monkeypatch):
+    async def fake_enriquecer_leads(leads):
+        return [
+            {
+                **lead,
+                "instagram": "https://instagram.com/exemplo",
+                "linkedin": None,
+                "facebook": None,
+                "email": "contato@exemplo.com",
+                "whatsapp_direto": None,
+            }
+            for lead in leads
+        ]
+
+    monkeypatch.setattr(
+        "app.routers.buscas.enriquecer_leads", fake_enriquecer_leads
+    )
+
+    resp = client.post(
+        "/buscas",
+        json={"cidade": "São Paulo", "termo": "dentista", "quantidade_alvo": 2},
+    )
+    assert resp.status_code == 200
+    leads = resp.json()["leads"]
+    assert all(lead["instagram"] == "https://instagram.com/exemplo" for lead in leads)
+    assert all(lead["email"] == "contato@exemplo.com" for lead in leads)
+    assert all(lead["fonte"] == "google_places" for lead in leads)
+
+
+def test_criar_busca_usa_fallback_osm_quando_places_nao_completa(client, monkeypatch):
+    async def fake_buscar_leads(cidade, termo, quantidade_alvo):
+        return []
+
+    async def fake_buscar_leads_osm(cidade, termo, quantidade):
+        return [
+            {
+                "nome": f"{termo} OSM",
+                "telefone": None,
+                "endereco": None,
+                "especialidade": termo,
+                "place_id": "osm-node-1",
+                "link_perfil": None,
+                "website": None,
+                "fonte": "osm",
+            }
+            for _ in range(quantidade)
+        ]
+
+    monkeypatch.setattr("app.routers.buscas.buscar_leads", fake_buscar_leads)
+    monkeypatch.setattr("app.routers.buscas.buscar_leads_osm", fake_buscar_leads_osm)
+
+    resp = client.post(
+        "/buscas",
+        json={"cidade": "São Paulo", "termo": "dentista", "quantidade_alvo": 3},
+    )
+    assert resp.status_code == 200
+    leads = resp.json()["leads"]
+    assert len(leads) == 3
+    assert all(lead["fonte"] == "osm" for lead in leads)
+
+
 def test_criar_busca_retorna_leads_mockados(client):
     resp = client.post(
         "/buscas",
@@ -97,4 +158,7 @@ def test_export_csv(client):
     resp = client.get(f"/buscas/{criada['id']}/export")
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/csv")
-    assert "nome,telefone,endereco,especialidade,link_perfil,favorito" in resp.text
+    assert (
+        "nome,telefone,endereco,especialidade,link_perfil,favorito,"
+        "website,instagram,linkedin,facebook,email,whatsapp_direto,fonte" in resp.text
+    )
