@@ -24,6 +24,10 @@ export default async function HomePage() {
           <div className="label">Com telefone</div>
           <div className="value">{stats.pct_leads_com_telefone}%</div>
         </div>
+        <div className="stat-tile">
+          <div className="label">Favoritados</div>
+          <div className="value">{stats.total_favoritos}</div>
+        </div>
       </div>
 
       <div className="card">

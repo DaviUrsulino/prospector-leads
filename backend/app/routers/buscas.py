@@ -56,6 +56,12 @@ def obter_estatisticas(db: Session = Depends(get_db)):
         or 0
     )
     pct_com_telefone = (leads_com_telefone / total_leads * 100) if total_leads else 0.0
+    total_favoritos = (
+        db.query(func.count(models.LeadEncontrado.id))
+        .filter(models.LeadEncontrado.favorito.is_(True))
+        .scalar()
+        or 0
+    )
 
     ultimas_buscas = (
         db.query(models.Busca).order_by(models.Busca.criada_em.desc()).limit(5).all()
@@ -65,6 +71,7 @@ def obter_estatisticas(db: Session = Depends(get_db)):
         total_buscas=total_buscas,
         total_leads=total_leads,
         pct_leads_com_telefone=round(pct_com_telefone, 1),
+        total_favoritos=total_favoritos,
         ultimas_buscas=ultimas_buscas,
     )
 
@@ -77,6 +84,22 @@ def obter_busca(busca_id: str, db: Session = Depends(get_db)):
     return busca
 
 
+@router.patch("/{busca_id}/leads/{lead_id}/favorito", response_model=schemas.LeadEncontradoOut)
+def alternar_favorito(busca_id: str, lead_id: str, db: Session = Depends(get_db)):
+    lead = (
+        db.query(models.LeadEncontrado)
+        .filter(models.LeadEncontrado.id == lead_id, models.LeadEncontrado.busca_id == busca_id)
+        .first()
+    )
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+    lead.favorito = not lead.favorito
+    db.commit()
+    db.refresh(lead)
+    return lead
+
+
 @router.get("/{busca_id}/export")
 def exportar_busca_csv(busca_id: str, db: Session = Depends(get_db)):
     busca = db.query(models.Busca).filter(models.Busca.id == busca_id).first()
@@ -85,10 +108,19 @@ def exportar_busca_csv(busca_id: str, db: Session = Depends(get_db)):
 
     buffer = io.StringIO()
     writer = csv.writer(buffer)
-    writer.writerow(["nome", "telefone", "endereco", "especialidade", "link_perfil"])
+    writer.writerow(
+        ["nome", "telefone", "endereco", "especialidade", "link_perfil", "favorito"]
+    )
     for lead in busca.leads:
         writer.writerow(
-            [lead.nome, lead.telefone, lead.endereco, lead.especialidade, lead.link_perfil]
+            [
+                lead.nome,
+                lead.telefone,
+                lead.endereco,
+                lead.especialidade,
+                lead.link_perfil,
+                lead.favorito,
+            ]
         )
     buffer.seek(0)
 

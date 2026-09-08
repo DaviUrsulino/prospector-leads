@@ -13,6 +13,7 @@ export type Lead = {
   especialidade: string;
   place_id: string | null;
   link_perfil: string | null;
+  favorito: boolean;
 };
 
 export type Busca = {
@@ -61,10 +62,21 @@ export function urlExportBusca(id: string): string {
   return `${API_URL}/buscas/${id}/export`;
 }
 
+export async function alternarFavorito(buscaId: string, leadId: string): Promise<Lead> {
+  const resp = await fetch(`${API_URL}/buscas/${buscaId}/leads/${leadId}/favorito`, {
+    method: "PATCH",
+  });
+  if (!resp.ok) {
+    throw new Error(`Falha ao favoritar lead: ${resp.status}`);
+  }
+  return resp.json();
+}
+
 export type Estatisticas = {
   total_buscas: number;
   total_leads: number;
   pct_leads_com_telefone: number;
+  total_favoritos: number;
   ultimas_buscas: Busca[];
 };
 

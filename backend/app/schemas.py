@@ -29,6 +29,7 @@ class LeadEncontradoOut(BaseModel):
     especialidade: str
     place_id: str | None
     link_perfil: str | None
+    favorito: bool
 
 
 class BuscaOut(BaseModel):
@@ -49,4 +50,5 @@ class EstatisticasOut(BaseModel):
     total_buscas: int
     total_leads: int
     pct_leads_com_telefone: float
+    total_favoritos: int
     ultimas_buscas: list[BuscaOut]

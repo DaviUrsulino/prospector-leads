@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ESPECIALIDADE_LABELS, obterBusca, urlExportBusca } from "@/lib/api";
+import { LeadsTable } from "./LeadsTable";
 
 export default async function BuscaDetalhePage({ params }: { params: { id: string } }) {
   const busca = await obterBusca(params.id);
@@ -23,40 +24,13 @@ export default async function BuscaDetalhePage({ params }: { params: { id: strin
         <a href={urlExportBusca(busca.id)}>Exportar CSV</a>
       </div>
 
-      <div className="card">
-        {busca.leads.length === 0 ? (
+      {busca.leads.length === 0 ? (
+        <div className="card">
           <div className="empty-state">Nenhum lead encontrado nessa busca.</div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Telefone</th>
-                <th>Endereço</th>
-                <th>Link</th>
-              </tr>
-            </thead>
-            <tbody>
-              {busca.leads.map((lead) => (
-                <tr key={lead.id}>
-                  <td>{lead.nome}</td>
-                  <td>{lead.telefone ?? "—"}</td>
-                  <td>{lead.endereco ?? "—"}</td>
-                  <td>
-                    {lead.link_perfil ? (
-                      <a href={lead.link_perfil} target="_blank" rel="noreferrer">
-                        abrir
-                      </a>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </div>
+      ) : (
+        <LeadsTable buscaId={busca.id} leadsIniciais={busca.leads} />
+      )}
     </main>
   );
 }

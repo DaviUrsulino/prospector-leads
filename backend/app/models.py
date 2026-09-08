@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -36,5 +36,6 @@ class LeadEncontrado(Base):
     especialidade = Column(String, nullable=False)
     place_id = Column(String, nullable=True)
     link_perfil = Column(String, nullable=True)
+    favorito = Column(Boolean, nullable=False, default=False)
 
     busca = relationship("Busca", back_populates="leads")

@@ -49,7 +49,23 @@ def test_estatisticas(client):
     assert body["total_buscas"] == 1
     assert body["total_leads"] == 4
     assert body["pct_leads_com_telefone"] == 100.0
+    assert body["total_favoritos"] == 0
     assert len(body["ultimas_buscas"]) == 1
+
+
+def test_alternar_favorito(client):
+    criada = client.post(
+        "/buscas",
+        json={"cidade": "Fortaleza", "termo": "medico", "quantidade_alvo": 1},
+    ).json()
+    lead_id = criada["leads"][0]["id"]
+
+    resp = client.patch(f"/buscas/{criada['id']}/leads/{lead_id}/favorito")
+    assert resp.status_code == 200
+    assert resp.json()["favorito"] is True
+
+    resp = client.patch(f"/buscas/{criada['id']}/leads/{lead_id}/favorito")
+    assert resp.json()["favorito"] is False
 
 
 def test_export_csv(client):
@@ -61,4 +77,4 @@ def test_export_csv(client):
     resp = client.get(f"/buscas/{criada['id']}/export")
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/csv")
-    assert "nome,telefone,endereco,especialidade,link_perfil" in resp.text
+    assert "nome,telefone,endereco,especialidade,link_perfil,favorito" in resp.text
