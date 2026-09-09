@@ -30,7 +30,8 @@ export function HistoricoTable({ buscasIniciais }: { buscasIniciais: Busca[] }) 
   }
 
   return (
-    <table>
+    <div className="table-scroll">
+      <table>
       <thead>
         <tr>
           <th>Cidade</th>
@@ -60,6 +61,7 @@ export function HistoricoTable({ buscasIniciais }: { buscasIniciais: Busca[] }) 
           </tr>
         ))}
       </tbody>
-    </table>
+      </table>
+    </div>
   );
 }

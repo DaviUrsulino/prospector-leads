@@ -1,5 +1,6 @@
 import csv
 import io
+import math
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -10,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db
+from app.services.dedup import filtrar_leads_novos, remover_duplicatas_do_lote
 from app.services.enrichment import enriquecer_leads, ordenar_por_completude
 from app.services.osm_fallback import buscar_leads_osm
 from app.services.places import buscar_leads
@@ -25,23 +27,33 @@ async def criar_busca(
     payload: schemas.BuscaCreate,
     db: Session = Depends(get_db),
 ):
-    leads_encontrados = await buscar_leads(
-        payload.cidade, payload.termo, payload.quantidade_alvo
-    )
+    por_termo = math.ceil(payload.quantidade_alvo / len(payload.termos))
+
+    leads_encontrados: list[dict] = []
+    for termo in payload.termos:
+        leads_encontrados += await buscar_leads(payload.cidade, termo, por_termo)
+    leads_encontrados = remover_duplicatas_do_lote(leads_encontrados)
 
     faltam = payload.quantidade_alvo - len(leads_encontrados)
     if faltam > 0:
-        leads_encontrados += await buscar_leads_osm(payload.cidade, payload.termo, faltam)
+        termo_combinado = " / ".join(payload.termos)
+        leads_encontrados += await buscar_leads_osm(payload.cidade, termo_combinado, faltam)
+        leads_encontrados = remover_duplicatas_do_lote(leads_encontrados)
+
+    leads_encontrados = filtrar_leads_novos(db, leads_encontrados)
+    leads_encontrados = leads_encontrados[: payload.quantidade_alvo]
 
     leads_encontrados = await enriquecer_leads(leads_encontrados)
     leads_encontrados = ordenar_por_completude(leads_encontrados)
 
     busca = models.Busca(
         cidade=payload.cidade,
-        termo=payload.termo,
+        termo=", ".join(payload.termos),
         quantidade_alvo=payload.quantidade_alvo,
     )
-    busca.leads = [models.LeadEncontrado(**lead) for lead in leads_encontrados]
+    busca.leads = [
+        models.LeadEncontrado(**lead, ordem=i) for i, lead in enumerate(leads_encontrados)
+    ]
 
     db.add(busca)
     db.commit()

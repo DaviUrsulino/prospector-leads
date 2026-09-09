@@ -64,8 +64,9 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
       {leadsFiltrados.length === 0 ? (
         <div className="empty-state">Nenhum lead corresponde ao filtro.</div>
       ) : (
-        <table>
-          <thead>
+        <div className="table-scroll">
+          <table>
+            <thead>
             <tr>
               <th></th>
               <th>Nome</th>
@@ -176,6 +177,7 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

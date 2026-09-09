@@ -18,7 +18,7 @@ def test_criar_busca_enriquece_leads_com_website(client, monkeypatch):
 
     resp = client.post(
         "/buscas",
-        json={"cidade": "São Paulo", "termo": "dentista", "quantidade_alvo": 2},
+        json={"cidade": "São Paulo", "termos": ["dentista"], "quantidade_alvo": 2},
     )
     assert resp.status_code == 200
     leads = resp.json()["leads"]
@@ -34,16 +34,16 @@ def test_criar_busca_usa_fallback_osm_quando_places_nao_completa(client, monkeyp
     async def fake_buscar_leads_osm(cidade, termo, quantidade):
         return [
             {
-                "nome": f"{termo} OSM",
+                "nome": f"{termo} OSM {i}",
                 "telefone": None,
                 "endereco": None,
                 "especialidade": termo,
-                "place_id": "osm-node-1",
+                "place_id": f"osm-node-{i}",
                 "link_perfil": None,
                 "website": None,
                 "fonte": "osm",
             }
-            for _ in range(quantidade)
+            for i in range(quantidade)
         ]
 
     monkeypatch.setattr("app.routers.buscas.buscar_leads", fake_buscar_leads)
@@ -51,7 +51,7 @@ def test_criar_busca_usa_fallback_osm_quando_places_nao_completa(client, monkeyp
 
     resp = client.post(
         "/buscas",
-        json={"cidade": "São Paulo", "termo": "dentista", "quantidade_alvo": 3},
+        json={"cidade": "São Paulo", "termos": ["dentista"], "quantidade_alvo": 3},
     )
     assert resp.status_code == 200
     leads = resp.json()["leads"]
@@ -62,7 +62,7 @@ def test_criar_busca_usa_fallback_osm_quando_places_nao_completa(client, monkeyp
 def test_criar_busca_retorna_leads_mockados(client):
     resp = client.post(
         "/buscas",
-        json={"cidade": "São Paulo", "termo": "dentista", "quantidade_alvo": 5},
+        json={"cidade": "São Paulo", "termos": ["dentista"], "quantidade_alvo": 5},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -74,7 +74,7 @@ def test_criar_busca_retorna_leads_mockados(client):
 def test_criar_busca_aceita_especialidade_livre(client):
     resp = client.post(
         "/buscas",
-        json={"cidade": "São Paulo", "termo": "ortopedista", "quantidade_alvo": 3},
+        json={"cidade": "São Paulo", "termos": ["ortopedista"], "quantidade_alvo": 3},
     )
     assert resp.status_code == 200
     assert resp.json()["termo"] == "ortopedista"
@@ -83,15 +83,57 @@ def test_criar_busca_aceita_especialidade_livre(client):
 def test_criar_busca_com_termo_curto_retorna_422(client):
     resp = client.post(
         "/buscas",
-        json={"cidade": "São Paulo", "termo": "a", "quantidade_alvo": 5},
+        json={"cidade": "São Paulo", "termos": ["a"], "quantidade_alvo": 5},
     )
     assert resp.status_code == 422
+
+
+def test_criar_busca_sem_nenhum_termo_retorna_422(client):
+    resp = client.post(
+        "/buscas",
+        json={"cidade": "São Paulo", "termos": [], "quantidade_alvo": 5},
+    )
+    assert resp.status_code == 422
+
+
+def test_criar_busca_com_multiplas_especialidades_combina_resultado(client):
+    resp = client.post(
+        "/buscas",
+        json={
+            "cidade": "São Paulo",
+            "termos": ["ortodontia", "endodontia"],
+            "quantidade_alvo": 6,
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["termo"] == "ortodontia, endodontia"
+    especialidades = {lead["especialidade"] for lead in body["leads"]}
+    assert especialidades == {"ortodontia", "endodontia"}
+    assert len(body["leads"]) == 6
+
+
+def test_criar_busca_nao_repete_lead_ja_encontrado_antes(client):
+    primeira = client.post(
+        "/buscas",
+        json={"cidade": "Recife", "termos": ["dentista"], "quantidade_alvo": 5},
+    ).json()
+    assert len(primeira["leads"]) == 5
+
+    segunda = client.post(
+        "/buscas",
+        json={"cidade": "Recife", "termos": ["dentista"], "quantidade_alvo": 5},
+    ).json()
+    # Mock é determinístico pra mesma cidade+termo: a segunda busca acha
+    # exatamente os mesmos estabelecimentos, então a deduplicação deve
+    # descartar todos.
+    assert segunda["leads"] == []
 
 
 def test_listar_e_obter_busca(client):
     criada = client.post(
         "/buscas",
-        json={"cidade": "Brasília", "termo": "medico", "quantidade_alvo": 3},
+        json={"cidade": "Brasília", "termos": ["medico"], "quantidade_alvo": 3},
     ).json()
 
     listagem = client.get("/buscas")
@@ -111,7 +153,7 @@ def test_busca_inexistente_retorna_404(client):
 def test_estatisticas(client):
     client.post(
         "/buscas",
-        json={"cidade": "Salvador", "termo": "biomedico", "quantidade_alvo": 4},
+        json={"cidade": "Salvador", "termos": ["biomedico"], "quantidade_alvo": 4},
     )
     resp = client.get("/buscas/estatisticas")
     assert resp.status_code == 200
@@ -126,7 +168,7 @@ def test_estatisticas(client):
 def test_alternar_favorito(client):
     criada = client.post(
         "/buscas",
-        json={"cidade": "Fortaleza", "termo": "medico", "quantidade_alvo": 1},
+        json={"cidade": "Fortaleza", "termos": ["medico"], "quantidade_alvo": 1},
     ).json()
     lead_id = criada["leads"][0]["id"]
 
@@ -141,7 +183,7 @@ def test_alternar_favorito(client):
 def test_excluir_busca(client):
     criada = client.post(
         "/buscas",
-        json={"cidade": "Porto Alegre", "termo": "esteticista", "quantidade_alvo": 1},
+        json={"cidade": "Porto Alegre", "termos": ["esteticista"], "quantidade_alvo": 1},
     ).json()
 
     resp = client.delete(f"/buscas/{criada['id']}")
@@ -152,7 +194,7 @@ def test_excluir_busca(client):
 def test_export_csv(client):
     criada = client.post(
         "/buscas",
-        json={"cidade": "Curitiba", "termo": "esteticista", "quantidade_alvo": 2},
+        json={"cidade": "Curitiba", "termos": ["esteticista"], "quantidade_alvo": 2},
     ).json()
 
     resp = client.get(f"/buscas/{criada['id']}/export")

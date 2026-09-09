@@ -1,13 +1,24 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BuscaCreate(BaseModel):
     cidade: str = Field(min_length=2, max_length=120)
-    termo: str = Field(min_length=2, max_length=80)
+    termos: list[str] = Field(min_length=1, max_length=20)
     quantidade_alvo: int = Field(gt=0, le=200)
+
+    @field_validator("termos")
+    @classmethod
+    def valida_termos(cls, valor: list[str]) -> list[str]:
+        limpos = [t.strip() for t in valor if t.strip()]
+        if not limpos:
+            raise ValueError("Informe ao menos uma especialidade")
+        for termo in limpos:
+            if not (2 <= len(termo) <= 80):
+                raise ValueError("Cada especialidade deve ter entre 2 e 80 caracteres")
+        return limpos
 
 
 class LeadEncontradoOut(BaseModel):

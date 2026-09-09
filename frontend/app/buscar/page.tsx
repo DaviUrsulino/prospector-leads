@@ -118,16 +118,35 @@ export default function BuscarPage() {
   const router = useRouter();
   const [cidade, setCidade] = useState("Brasília");
   const [segmento, setSegmento] = useState<keyof typeof SEGMENTOS>("Dentista");
-  const [termo, setTermo] = useState("");
+  const [termosSelecionados, setTermosSelecionados] = useState<string[]>([]);
+  const [termoCustom, setTermoCustom] = useState("");
   const [quantidadeTexto, setQuantidadeTexto] = useState("50");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
   const sugestoes = useMemo(() => SEGMENTOS[segmento], [segmento]);
 
+  function alternarTermo(termo: string) {
+    setTermosSelecionados((prev) =>
+      prev.includes(termo) ? prev.filter((t) => t !== termo) : [...prev, termo]
+    );
+  }
+
+  function adicionarTermoCustom() {
+    const valor = termoCustom.trim();
+    if (!valor || termosSelecionados.includes(valor)) return;
+    setTermosSelecionados((prev) => [...prev, valor]);
+    setTermoCustom("");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErro(null);
+
+    if (termosSelecionados.length === 0) {
+      setErro("Marque ao menos uma especialidade.");
+      return;
+    }
 
     const quantidade = Number(quantidadeTexto);
     if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 200) {
@@ -139,7 +158,7 @@ export default function BuscarPage() {
     try {
       const busca = await criarBusca({
         cidade,
-        termo: termo.trim(),
+        termos: termosSelecionados,
         quantidade_alvo: quantidade,
       });
       router.push(`/buscas/${busca.id}`);
@@ -179,7 +198,7 @@ export default function BuscarPage() {
             value={segmento}
             onChange={(e) => {
               setSegmento(e.target.value);
-              setTermo("");
+              setTermosSelecionados([]);
             }}
           >
             {Object.keys(SEGMENTOS).map((s) => (
@@ -190,21 +209,51 @@ export default function BuscarPage() {
           </select>
         </label>
 
-        <label>
-          Especialidade
-          <input
-            list="sugestoes-especialidade"
-            value={termo}
-            onChange={(e) => setTermo(e.target.value)}
-            placeholder="Digite ou escolha uma sugestão"
-            required
-          />
-          <datalist id="sugestoes-especialidade">
+        <div>
+          <label>Especialidades (marque uma ou mais)</label>
+          <div className="checkbox-grid">
             {sugestoes.map((s) => (
-              <option key={s} value={s} />
+              <label key={s} className="checkbox-label checkbox-label--block">
+                <input
+                  type="checkbox"
+                  checked={termosSelecionados.includes(s)}
+                  onChange={() => alternarTermo(s)}
+                />
+                {s}
+              </label>
             ))}
-          </datalist>
-        </label>
+          </div>
+
+          <div className="custom-termo-row">
+            <input
+              value={termoCustom}
+              onChange={(e) => setTermoCustom(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  adicionarTermoCustom();
+                }
+              }}
+              placeholder="Outra especialidade..."
+            />
+            <button type="button" onClick={adicionarTermoCustom}>
+              Adicionar
+            </button>
+          </div>
+
+          {termosSelecionados.length > 0 && (
+            <div className="chips-row">
+              {termosSelecionados.map((t) => (
+                <span key={t} className="badge chip">
+                  {t}
+                  <button type="button" onClick={() => alternarTermo(t)} aria-label={`Remover ${t}`}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         <label>
           Quantidade de contatos

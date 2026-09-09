@@ -23,10 +23,14 @@ PAGE_SIZE = 20  # máximo aceito pelo Text Search (New) por página
 
 def _mock_leads(cidade: str, termo: str, quantidade_alvo: int) -> list[dict]:
     """Dados falsos, usados enquanto não há GOOGLE_PLACES_API_KEY configurada."""
+    # Desloca o número pelo termo pra especialidades diferentes não gerarem
+    # o mesmo telefone (senão a deduplicação global as trataria como o
+    # mesmo lead quando, na verdade, são estabelecimentos mockados distintos).
+    offset = sum(ord(c) for c in termo) % 900
     return [
         {
             "nome": f"{termo.capitalize()} Exemplo {i + 1} - {cidade}",
-            "telefone": f"+55 61 9{9000 + i:04d}-{1000 + i:04d}",
+            "telefone": f"+55 61 9{9000 + offset + i:04d}-{1000 + offset + i:04d}",
             "endereco": f"Rua Fictícia, {100 + i} - {cidade}",
             "especialidade": termo,
             "place_id": f"mock-{cidade}-{termo}-{i}",

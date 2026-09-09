@@ -38,7 +38,7 @@ export type BuscaComLeads = Busca & { leads: Lead[] };
 
 export async function criarBusca(input: {
   cidade: string;
-  termo: string;
+  termos: string[];
   quantidade_alvo: number;
 }): Promise<BuscaComLeads> {
   const resp = await fetch(`${API_URL}/buscas`, {

@@ -95,7 +95,13 @@ async def enriquecer_leads(leads: list[dict]) -> list[dict]:
     async def _enriquecer_um(lead: dict) -> dict:
         async with semaforo:
             redes = await enriquecer_redes_sociais(lead.get("website"))
-        return {**lead, **redes}
+        # Só preenche o que ainda não tem — não sobrescreve dado que já
+        # veio de outra fonte (ex: contact:instagram do OSM).
+        mesclado = dict(lead)
+        for campo, valor in redes.items():
+            if not mesclado.get(campo):
+                mesclado[campo] = valor
+        return mesclado
 
     return list(await asyncio.gather(*(_enriquecer_um(lead) for lead in leads)))
 
