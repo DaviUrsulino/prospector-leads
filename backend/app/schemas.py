@@ -3,6 +3,17 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+_SEPARADORES_PERMITIDOS = set(" /()-")
+
+
+def _termo_valido(termo: str) -> bool:
+    """Só letra (com acento, via str.isalpha() — Unicode-aware) e uns
+    poucos separadores comuns em nome de especialidade ("Cirurgia e
+    Traumatologia Bucomaxilofacial", "Dentística / Estética Dental").
+    Barra número solto, emoji, símbolo aleatório etc. — não é (nem tenta
+    ser) uma validação semântica contra especialidade inventada."""
+    return all(c.isalpha() or c in _SEPARADORES_PERMITIDOS for c in termo)
+
 
 class BuscaCreate(BaseModel):
     cidade: str = Field(min_length=2, max_length=120)
@@ -18,6 +29,10 @@ class BuscaCreate(BaseModel):
         for termo in limpos:
             if not (2 <= len(termo) <= 80):
                 raise ValueError("Cada especialidade deve ter entre 2 e 80 caracteres")
+            if not _termo_valido(termo):
+                raise ValueError(
+                    f'Especialidade inválida: "{termo}" — use só letras, sem número ou símbolo'
+                )
         return limpos
 
 

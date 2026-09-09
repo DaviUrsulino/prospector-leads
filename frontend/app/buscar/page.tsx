@@ -132,9 +132,22 @@ export default function BuscarPage() {
     );
   }
 
+  // Só letras (com acento), espaços e uns poucos separadores comuns em nome
+  // de especialidade ("Cirurgia e Traumatologia Bucomaxilofacial", "Dentística
+  // / Estética Dental"). Barra número solto, emoji, símbolo aleatório etc.
+  // Não impede alguém de digitar uma palavra qualquer que "pareça" válida
+  // (ex: "banana") — isso exigiria checar contra uma lista real de
+  // especialidades médicas, o que não temos.
+  const TERMO_VALIDO = /^[\p{L}\s/()-]+$/u;
+
   function adicionarTermoCustom() {
     const valor = termoCustom.trim();
     if (!valor || termosSelecionados.includes(valor)) return;
+    if (valor.length < 3 || !TERMO_VALIDO.test(valor)) {
+      setErro('Especialidade inválida — use só letras (ex: "Reumatologia"), sem número ou símbolo.');
+      return;
+    }
+    setErro(null);
     setTermosSelecionados((prev) => [...prev, valor]);
     setTermoCustom("");
   }
