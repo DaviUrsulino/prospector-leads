@@ -120,7 +120,7 @@ export default function BuscarPage() {
   const [segmento, setSegmento] = useState<keyof typeof SEGMENTOS>("Dentista");
   const [termosSelecionados, setTermosSelecionados] = useState<string[]>([]);
   const [termoCustom, setTermoCustom] = useState("");
-  const [quantidadeTexto, setQuantidadeTexto] = useState("50");
+  const [quantidadeTexto, setQuantidadeTexto] = useState("20");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
