@@ -15,6 +15,7 @@ from app.services.dedup import filtrar_leads_novos, remover_duplicatas_do_lote
 from app.services.enrichment import enriquecer_leads, ordenar_por_completude
 from app.services.osm_fallback import buscar_leads_osm
 from app.services.places import buscar_leads
+from app.services.regioes import regioes_extras
 
 router = APIRouter(prefix="/buscas", tags=["buscas"])
 limiter = Limiter(key_func=get_remote_address)
@@ -39,6 +40,18 @@ async def criar_busca(
         termo_combinado = " / ".join(payload.termos)
         leads_encontrados += await buscar_leads_osm(payload.cidade, termo_combinado, faltam)
         leads_encontrados = remover_duplicatas_do_lote(leads_encontrados)
+        faltam = payload.quantidade_alvo - len(leads_encontrados)
+
+    if faltam > 0:
+        for regiao in regioes_extras(payload.cidade):
+            if faltam <= 0:
+                break
+            for termo in payload.termos:
+                if faltam <= 0:
+                    break
+                leads_encontrados += await buscar_leads(regiao, termo, faltam)
+                leads_encontrados = remover_duplicatas_do_lote(leads_encontrados)
+                faltam = payload.quantidade_alvo - len(leads_encontrados)
 
     leads_encontrados = filtrar_leads_novos(db, leads_encontrados)
     leads_encontrados = leads_encontrados[: payload.quantidade_alvo]

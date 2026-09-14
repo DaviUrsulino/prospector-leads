@@ -59,6 +59,40 @@ def test_criar_busca_usa_fallback_osm_quando_places_nao_completa(client, monkeyp
     assert all(lead["fonte"] == "osm" for lead in leads)
 
 
+def test_criar_busca_expande_pra_regioes_quando_ainda_falta(client, monkeypatch):
+    async def fake_buscar_leads(cidade, termo, quantidade_alvo):
+        if cidade == "Brasília":
+            return []
+        return [
+            {
+                "nome": f"Clínica {cidade} {i}",
+                "telefone": f"+55 61 9{i:04d}-0000",
+                "endereco": cidade,
+                "especialidade": termo,
+                "place_id": f"place-{cidade}-{i}",
+                "link_perfil": None,
+                "website": None,
+                "fonte": "google_places",
+            }
+            for i in range(min(quantidade_alvo, 5))
+        ]
+
+    async def fake_buscar_leads_osm(cidade, termo, quantidade):
+        return []
+
+    monkeypatch.setattr("app.routers.buscas.buscar_leads", fake_buscar_leads)
+    monkeypatch.setattr("app.routers.buscas.buscar_leads_osm", fake_buscar_leads_osm)
+
+    resp = client.post(
+        "/buscas",
+        json={"cidade": "Brasília", "termos": ["urologia"], "quantidade_alvo": 5},
+    )
+    assert resp.status_code == 200
+    leads = resp.json()["leads"]
+    assert len(leads) == 5
+    assert all("Ceilândia" in lead["endereco"] for lead in leads)
+
+
 def test_criar_busca_retorna_leads_mockados(client):
     resp = client.post(
         "/buscas",
