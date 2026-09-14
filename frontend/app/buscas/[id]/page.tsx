@@ -26,7 +26,12 @@ export default async function BuscaDetalhePage({ params }: { params: { id: strin
 
       {busca.leads.length === 0 ? (
         <div className="card">
-          <div className="empty-state">Nenhum lead encontrado nessa busca.</div>
+          <div className="empty-state">
+            Nenhum lead <strong>novo</strong> encontrado nessa busca — todos os
+            resultados pra essa cidade/especialidade já tinham aparecido em
+            buscas anteriores (o sistema não repete o mesmo lead duas vezes).
+            Tenta uma especialidade ou cidade diferente.
+          </div>
         </div>
       ) : (
         <LeadsTable buscaId={busca.id} leadsIniciais={busca.leads} />

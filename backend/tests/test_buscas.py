@@ -59,14 +59,18 @@ def test_criar_busca_usa_fallback_osm_quando_places_nao_completa(client, monkeyp
     assert all(lead["fonte"] == "osm" for lead in leads)
 
 
-def test_criar_busca_expande_pra_regioes_quando_ainda_falta(client, monkeypatch):
+def test_criar_busca_ja_busca_nas_regioes_desde_o_inicio(client, monkeypatch):
+    """Mesmo quando o alvo é baixo e o Plano Piloto sozinho não devolve
+    nada, a busca já deve espalhar pelas regiões metropolitanas de cara —
+    não só como reforço depois de "faltar"."""
+
     async def fake_buscar_leads(cidade, termo, quantidade_alvo):
         if cidade == "Brasília":
             return []
         return [
             {
                 "nome": f"Clínica {cidade} {i}",
-                "telefone": f"+55 61 9{i:04d}-0000",
+                "telefone": f"+55 61 9{hash(cidade) % 900:03d}{i:04d}-0000",
                 "endereco": cidade,
                 "especialidade": termo,
                 "place_id": f"place-{cidade}-{i}",
@@ -74,7 +78,7 @@ def test_criar_busca_expande_pra_regioes_quando_ainda_falta(client, monkeypatch)
                 "website": None,
                 "fonte": "google_places",
             }
-            for i in range(min(quantidade_alvo, 5))
+            for i in range(quantidade_alvo)
         ]
 
     async def fake_buscar_leads_osm(cidade, termo, quantidade):
@@ -85,12 +89,13 @@ def test_criar_busca_expande_pra_regioes_quando_ainda_falta(client, monkeypatch)
 
     resp = client.post(
         "/buscas",
-        json={"cidade": "Brasília", "termos": ["urologia"], "quantidade_alvo": 5},
+        json={"cidade": "Brasília", "termos": ["dermatologia"], "quantidade_alvo": 5},
     )
     assert resp.status_code == 200
     leads = resp.json()["leads"]
     assert len(leads) == 5
-    assert all("Ceilândia" in lead["endereco"] for lead in leads)
+    regioes_encontradas = {lead["endereco"] for lead in leads}
+    assert len(regioes_encontradas) > 1
 
 
 def test_criar_busca_retorna_leads_mockados(client):

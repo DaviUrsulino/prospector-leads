@@ -28,11 +28,18 @@ async def criar_busca(
     payload: schemas.BuscaCreate,
     db: Session = Depends(get_db),
 ):
+    # Busca desde o início em Brasília + regiões metropolitanas (Ceilândia,
+    # Taguatinga, Águas Claras etc.), não só quando falta — senão, com um
+    # alvo baixo (ex: 20), uma página só do Plano Piloto já "bate a meta" e
+    # o resto da região nunca chega a ser tentado.
+    areas = [payload.cidade] + regioes_extras(payload.cidade)
     por_termo = math.ceil(payload.quantidade_alvo / len(payload.termos))
+    por_area = math.ceil(por_termo / len(areas))
 
     leads_encontrados: list[dict] = []
     for termo in payload.termos:
-        leads_encontrados += await buscar_leads(payload.cidade, termo, por_termo)
+        for area in areas:
+            leads_encontrados += await buscar_leads(area, termo, por_area)
     leads_encontrados = remover_duplicatas_do_lote(leads_encontrados)
 
     faltam = payload.quantidade_alvo - len(leads_encontrados)
@@ -42,14 +49,16 @@ async def criar_busca(
         leads_encontrados = remover_duplicatas_do_lote(leads_encontrados)
         faltam = payload.quantidade_alvo - len(leads_encontrados)
 
+    # Reforço: se as áreas deram pouco (especialidade rara), pede mais de
+    # cada uma até completar ou esgotar as opções.
     if faltam > 0:
-        for regiao in regioes_extras(payload.cidade):
+        for area in areas:
             if faltam <= 0:
                 break
             for termo in payload.termos:
                 if faltam <= 0:
                     break
-                leads_encontrados += await buscar_leads(regiao, termo, faltam)
+                leads_encontrados += await buscar_leads(area, termo, faltam)
                 leads_encontrados = remover_duplicatas_do_lote(leads_encontrados)
                 faltam = payload.quantidade_alvo - len(leads_encontrados)
 
