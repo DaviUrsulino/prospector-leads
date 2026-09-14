@@ -14,7 +14,7 @@ from app.database import get_db
 from app.services.dedup import filtrar_leads_novos, remover_duplicatas_do_lote
 from app.services.enrichment import enriquecer_leads, ordenar_por_completude
 from app.services.osm_fallback import buscar_leads_osm
-from app.services.places import buscar_leads
+from app.services.places import PAGE_SIZE, buscar_leads
 from app.services.regioes import descarta_fora_do_df, regioes_extras
 
 router = APIRouter(prefix="/buscas", tags=["buscas"])
@@ -32,9 +32,15 @@ async def criar_busca(
     # Taguatinga, Águas Claras etc.), não só quando falta — senão, com um
     # alvo baixo (ex: 20), uma página só do Plano Piloto já "bate a meta" e
     # o resto da região nunca chega a ser tentado.
+    # Pede até uma página cheia (20) de cada área — a Places cobra por
+    # chamada, não por quantidade de resultado dentro da mesma chamada, então
+    # pedir pouco de cada área só faz o sistema parar cedo demais sem custar
+    # menos (foi exatamente esse o bug: dividir o alvo entre 9 áreas pedia
+    # só 2-3 de cada uma, e a busca "batia a meta" bem antes de esgotar
+    # qualquer área de verdade).
     areas = [payload.cidade] + regioes_extras(payload.cidade)
     por_termo = math.ceil(payload.quantidade_alvo / len(payload.termos))
-    por_area = math.ceil(por_termo / len(areas))
+    por_area = min(por_termo, PAGE_SIZE)
 
     leads_encontrados: list[dict] = []
     for termo in payload.termos:

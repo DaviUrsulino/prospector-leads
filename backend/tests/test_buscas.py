@@ -60,26 +60,30 @@ def test_criar_busca_usa_fallback_osm_quando_places_nao_completa(client, monkeyp
 
 
 def test_criar_busca_ja_busca_nas_regioes_desde_o_inicio(client, monkeypatch):
-    """Mesmo quando o alvo é baixo e o Plano Piloto sozinho não devolve
-    nada, a busca já deve espalhar pelas regiões metropolitanas de cara —
-    não só como reforço depois de "faltar"."""
+    """Mesmo quando o Plano Piloto sozinho já bate a meta, a busca deve
+    consultar as regiões metropolitanas também — não só como reforço
+    depois de "faltar" — e pedir até uma página cheia de cada uma, não
+    fatiar a quantidade entre elas."""
+
+    chamadas: list[tuple[str, int]] = []
 
     async def fake_buscar_leads(cidade, termo, quantidade_alvo):
+        chamadas.append((cidade, quantidade_alvo))
         if cidade == "Brasília":
-            return []
-        return [
-            {
-                "nome": f"Clínica {cidade} {i}",
-                "telefone": f"+55 61 9{hash(cidade) % 900:03d}{i:04d}-0000",
-                "endereco": cidade,
-                "especialidade": termo,
-                "place_id": f"place-{cidade}-{i}",
-                "link_perfil": None,
-                "website": None,
-                "fonte": "google_places",
-            }
-            for i in range(quantidade_alvo)
-        ]
+            return [
+                {
+                    "nome": f"Clínica Plano Piloto {i}",
+                    "telefone": f"+55 61 90000-{i:04d}",
+                    "endereco": cidade,
+                    "especialidade": termo,
+                    "place_id": f"place-brasilia-{i}",
+                    "link_perfil": None,
+                    "website": None,
+                    "fonte": "google_places",
+                }
+                for i in range(quantidade_alvo)
+            ]
+        return []
 
     async def fake_buscar_leads_osm(cidade, termo, quantidade):
         return []
@@ -89,13 +93,19 @@ def test_criar_busca_ja_busca_nas_regioes_desde_o_inicio(client, monkeypatch):
 
     resp = client.post(
         "/buscas",
-        json={"cidade": "Brasília", "termos": ["dermatologia"], "quantidade_alvo": 5},
+        json={"cidade": "Brasília", "termos": ["dermatologia"], "quantidade_alvo": 20},
     )
     assert resp.status_code == 200
     leads = resp.json()["leads"]
-    assert len(leads) == 5
-    regioes_encontradas = {lead["endereco"] for lead in leads}
-    assert len(regioes_encontradas) > 1
+    assert len(leads) == 20
+
+    # Todas as 9 áreas (Brasília + 8 regiões) precisam ter sido consultadas,
+    # mesmo já tendo 5 resultados só da primeira (Brasília).
+    cidades_chamadas = {c for c, _ in chamadas}
+    assert len(cidades_chamadas) == 9
+    # E cada uma pedindo até uma página cheia (20), não uma fatia pequena
+    # tipo 1 ou 2 — é aí que estava o bug de esgotar a região cedo demais.
+    assert all(quantidade == 20 for _, quantidade in chamadas)
 
 
 def test_criar_busca_retorna_leads_mockados(client):
