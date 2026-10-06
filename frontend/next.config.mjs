@@ -2,6 +2,7 @@ const BACKEND_URL = process.env.API_URL ?? "http://backend:8000";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   staleTimes: {
     dynamic: 0,
   },
