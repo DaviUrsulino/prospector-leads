@@ -4,8 +4,9 @@ import { LeadsTable } from "./LeadsTable";
 
 export const dynamic = "force-dynamic";
 
-export default async function BuscaDetalhePage({ params }: { params: { id: string } }) {
-  const busca = await obterBusca(params.id);
+export default async function BuscaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const busca = await obterBusca(id);
   const especialidade = formatarEspecialidade(busca.termo);
 
   return (
