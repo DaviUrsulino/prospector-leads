@@ -2,6 +2,11 @@ const BACKEND_URL = process.env.API_URL ?? "http://backend:8000";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+    },
+  },
   async rewrites() {
     // O navegador só fala com o próprio Next (mesma origem, sem CORS, sem
     // precisar saber o host interno do Docker); o Next repassa pro backend.

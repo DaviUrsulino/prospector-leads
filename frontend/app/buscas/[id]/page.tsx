@@ -2,6 +2,8 @@ import Link from "next/link";
 import { formatarEspecialidade, obterBusca, urlExportBusca } from "@/lib/api";
 import { LeadsTable } from "./LeadsTable";
 
+export const dynamic = "force-dynamic";
+
 export default async function BuscaDetalhePage({ params }: { params: { id: string } }) {
   const busca = await obterBusca(params.id);
   const especialidade = formatarEspecialidade(busca.termo);

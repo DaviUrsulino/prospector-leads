@@ -1,12 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { alternarFavorito, type Lead } from "@/lib/api";
+import { alternarContatado, alternarFavorito, type Lead } from "@/lib/api";
 
 export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsIniciais: Lead[] }) {
   const [leads, setLeads] = useState(leadsIniciais);
   const [filtro, setFiltro] = useState("");
   const [soFavoritos, setSoFavoritos] = useState(false);
+  const [soNaoContatados, setSoNaoContatados] = useState(false);
+
+  const totalContatados = leads.filter((l) => l.contatado).length;
 
   function urlWhatsapp(telefone: string): string {
     const digitos = telefone.replace(/\D/g, "");
@@ -21,29 +24,46 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
     const termo = filtro.trim().toLowerCase();
     return leads.filter((lead) => {
       if (soFavoritos && !lead.favorito) return false;
+      if (soNaoContatados && lead.contatado) return false;
       if (!termo) return true;
       return (
         lead.nome.toLowerCase().includes(termo) ||
         (lead.endereco ?? "").toLowerCase().includes(termo)
       );
     });
-  }, [leads, filtro, soFavoritos]);
+  }, [leads, filtro, soFavoritos, soNaoContatados]);
 
-  async function toggleFavorito(leadId: string) {
+  async function toggleContatado(leadId: string, novoValor: boolean) {
     setLeads((prev) =>
-      prev.map((l) => (l.id === leadId ? { ...l, favorito: !l.favorito } : l))
+      prev.map((l) => (l.id === leadId ? { ...l, contatado: novoValor } : l))
     );
     try {
-      await alternarFavorito(buscaId, leadId);
+      await alternarContatado(buscaId, leadId, novoValor);
     } catch {
       setLeads((prev) =>
-        prev.map((l) => (l.id === leadId ? { ...l, favorito: !l.favorito } : l))
+        prev.map((l) => (l.id === leadId ? { ...l, contatado: !novoValor } : l))
+      );
+    }
+  }
+
+  async function toggleFavorito(leadId: string, novoValor: boolean) {
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? { ...l, favorito: novoValor } : l))
+    );
+    try {
+      await alternarFavorito(buscaId, leadId, novoValor);
+    } catch {
+      setLeads((prev) =>
+        prev.map((l) => (l.id === leadId ? { ...l, favorito: !novoValor } : l))
       );
     }
   }
 
   return (
     <div className="card">
+      <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem", color: "var(--color-text-muted, #9ca3af)" }}>
+        {totalContatados} de {leads.length} contatados
+      </div>
       <div className="table-controls">
         <input
           className="filter-input"
@@ -59,6 +79,14 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
           />
           Só favoritos
         </label>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={soNaoContatados}
+            onChange={(e) => setSoNaoContatados(e.target.checked)}
+          />
+          Só não contatados
+        </label>
       </div>
 
       {leadsFiltrados.length === 0 ? (
@@ -69,6 +97,7 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
             <thead>
             <tr>
               <th></th>
+              <th>Contatado</th>
               <th>Nome</th>
               <th>Telefone</th>
               <th>WhatsApp direto</th>
@@ -82,11 +111,20 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
           </thead>
           <tbody>
             {leadsFiltrados.map((lead) => (
-              <tr key={lead.id}>
+              <tr key={lead.id} style={lead.contatado ? { background: "rgba(234, 179, 8, 0.15)" } : undefined}>
+                <td style={{ textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={lead.contatado}
+                    onChange={(e) => toggleContatado(lead.id, e.target.checked)}
+                    title={lead.contatado ? "Desmarcar contatado" : "Marcar como contatado"}
+                    style={{ width: "1rem", height: "1rem", cursor: "pointer", accentColor: "#ca8a04" }}
+                  />
+                </td>
                 <td>
                   <button
                     className="favorite-btn"
-                    onClick={() => toggleFavorito(lead.id)}
+                    onClick={() => toggleFavorito(lead.id, !lead.favorito)}
                     aria-label={lead.favorito ? "Remover favorito" : "Favoritar"}
                     title={lead.favorito ? "Remover favorito" : "Favoritar"}
                   >

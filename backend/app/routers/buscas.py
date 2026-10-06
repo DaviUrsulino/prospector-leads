@@ -134,8 +134,8 @@ def obter_busca(busca_id: str, db: Session = Depends(get_db)):
     return busca
 
 
-@router.patch("/{busca_id}/leads/{lead_id}/favorito", response_model=schemas.LeadEncontradoOut)
-def alternar_favorito(busca_id: str, lead_id: str, db: Session = Depends(get_db)):
+@router.patch("/{busca_id}/leads/{lead_id}/contatado", response_model=schemas.LeadEncontradoOut)
+def set_contatado(busca_id: str, lead_id: str, valor: bool, db: Session = Depends(get_db)):
     lead = (
         db.query(models.LeadEncontrado)
         .filter(models.LeadEncontrado.id == lead_id, models.LeadEncontrado.busca_id == busca_id)
@@ -144,7 +144,23 @@ def alternar_favorito(busca_id: str, lead_id: str, db: Session = Depends(get_db)
     if not lead:
         raise HTTPException(status_code=404, detail="Lead não encontrado")
 
-    lead.favorito = not lead.favorito
+    lead.contatado = valor
+    db.commit()
+    db.refresh(lead)
+    return lead
+
+
+@router.patch("/{busca_id}/leads/{lead_id}/favorito", response_model=schemas.LeadEncontradoOut)
+def set_favorito(busca_id: str, lead_id: str, valor: bool, db: Session = Depends(get_db)):
+    lead = (
+        db.query(models.LeadEncontrado)
+        .filter(models.LeadEncontrado.id == lead_id, models.LeadEncontrado.busca_id == busca_id)
+        .first()
+    )
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+    lead.favorito = valor
     db.commit()
     db.refresh(lead)
     return lead

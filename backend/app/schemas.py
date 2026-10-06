@@ -47,6 +47,7 @@ class LeadEncontradoOut(BaseModel):
     place_id: str | None
     link_perfil: str | None
     favorito: bool
+    contatado: bool
     website: str | None
     instagram: str | None
     linkedin: str | None
