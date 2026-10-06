@@ -220,13 +220,41 @@ def test_alternar_favorito(client):
         json={"cidade": "Fortaleza", "termos": ["medico"], "quantidade_alvo": 1},
     ).json()
     lead_id = criada["leads"][0]["id"]
+    busca_id = criada["id"]
 
-    resp = client.patch(f"/buscas/{criada['id']}/leads/{lead_id}/favorito")
+    resp = client.patch(f"/buscas/{busca_id}/leads/{lead_id}/favorito?valor=true")
     assert resp.status_code == 200
     assert resp.json()["favorito"] is True
 
-    resp = client.patch(f"/buscas/{criada['id']}/leads/{lead_id}/favorito")
+    resp = client.patch(f"/buscas/{busca_id}/leads/{lead_id}/favorito?valor=true")
+    assert resp.json()["favorito"] is True  # idempotente
+
+    resp = client.patch(f"/buscas/{busca_id}/leads/{lead_id}/favorito?valor=false")
     assert resp.json()["favorito"] is False
+
+
+def test_set_contatado(client):
+    criada = client.post(
+        "/buscas",
+        json={"cidade": "Manaus", "termos": ["medico"], "quantidade_alvo": 1},
+    ).json()
+    lead_id = criada["leads"][0]["id"]
+    busca_id = criada["id"]
+
+    resp = client.patch(f"/buscas/{busca_id}/leads/{lead_id}/contatado?valor=true")
+    assert resp.status_code == 200
+    assert resp.json()["contatado"] is True
+
+    # idempotente: chamar de novo com mesmo valor não inverte
+    resp = client.patch(f"/buscas/{busca_id}/leads/{lead_id}/contatado?valor=true")
+    assert resp.json()["contatado"] is True
+
+    resp = client.patch(f"/buscas/{busca_id}/leads/{lead_id}/contatado?valor=false")
+    assert resp.json()["contatado"] is False
+
+    # lead de outra busca não deve ser afetado
+    resp = client.patch(f"/buscas/00000000-0000-0000-0000-000000000000/leads/{lead_id}/contatado?valor=true")
+    assert resp.status_code == 404
 
 
 def test_excluir_busca(client):
@@ -250,6 +278,6 @@ def test_export_csv(client):
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/csv")
     assert (
-        "nome,telefone,endereco,especialidade,link_perfil,favorito,"
+        "nome,telefone,endereco,especialidade,link_perfil,favorito,contatado,"
         "website,instagram,linkedin,facebook,email,whatsapp_direto,fonte" in resp.text
     )
