@@ -49,7 +49,7 @@ export function HistoricoTable({ buscasIniciais }: { buscasIniciais: Busca[] }) 
               <span className="badge">{formatarEspecialidade(b.termo)}</span>
             </td>
             <td>{b.quantidade_alvo}</td>
-            <td>{new Date(b.criada_em).toLocaleString("pt-BR")}</td>
+            <td>{new Date(b.criada_em + "Z").toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}</td>
             <td className="row-actions">
               <Link className="link-quiet" href={`/buscas/${b.id}`}>
                 ver →
