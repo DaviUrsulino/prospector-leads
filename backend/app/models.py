@@ -40,6 +40,7 @@ class LeadEncontrado(Base):
     place_id = Column(String, nullable=True)
     link_perfil = Column(String, nullable=True)
     favorito = Column(Boolean, nullable=False, default=False)
+    contatado = Column(Boolean, nullable=False, default=False)
     website = Column(String, nullable=True)
     instagram = Column(String, nullable=True)
     linkedin = Column(String, nullable=True)

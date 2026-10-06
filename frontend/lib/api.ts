@@ -17,6 +17,7 @@ export type Lead = {
   place_id: string | null;
   link_perfil: string | null;
   favorito: boolean;
+  contatado: boolean;
   website: string | null;
   instagram: string | null;
   linkedin: string | null;
@@ -41,7 +42,7 @@ export async function criarBusca(input: {
   termos: string[];
   quantidade_alvo: number;
 }): Promise<BuscaComLeads> {
-  const resp = await fetch(`${API_URL}/buscas`, {
+  const resp = await fetch("/api/buscar", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -81,8 +82,18 @@ export async function excluirBusca(id: string): Promise<void> {
   }
 }
 
-export async function alternarFavorito(buscaId: string, leadId: string): Promise<Lead> {
-  const resp = await fetch(`${API_URL}/buscas/${buscaId}/leads/${leadId}/favorito`, {
+export async function alternarContatado(buscaId: string, leadId: string, valor: boolean): Promise<Lead> {
+  const resp = await fetch(`${API_URL}/buscas/${buscaId}/leads/${leadId}/contatado?valor=${valor}`, {
+    method: "PATCH",
+  });
+  if (!resp.ok) {
+    throw new Error(`Falha ao marcar contatado: ${resp.status}`);
+  }
+  return resp.json();
+}
+
+export async function alternarFavorito(buscaId: string, leadId: string, valor: boolean): Promise<Lead> {
+  const resp = await fetch(`${API_URL}/buscas/${buscaId}/leads/${leadId}/favorito?valor=${valor}`, {
     method: "PATCH",
   });
   if (!resp.ok) {
