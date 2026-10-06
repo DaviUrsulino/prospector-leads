@@ -3,6 +3,7 @@ import { formatarEspecialidade, obterBusca, urlExportBusca } from "@/lib/api";
 import { LeadsTable } from "./LeadsTable";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function BuscaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
