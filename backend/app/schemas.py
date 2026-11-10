@@ -48,6 +48,7 @@ class LeadEncontradoOut(BaseModel):
     link_perfil: str | None
     favorito: bool
     contatado: bool
+    mensagem_enviada_em: datetime | None
     website: str | None
     instagram: str | None
     linkedin: str | None

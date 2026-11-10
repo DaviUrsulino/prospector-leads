@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -41,6 +41,7 @@ class LeadEncontrado(Base):
     link_perfil = Column(String, nullable=True)
     favorito = Column(Boolean, nullable=False, default=False)
     contatado = Column(Boolean, nullable=False, default=False)
+    mensagem_enviada_em = Column(DateTime, nullable=True)
     website = Column(String, nullable=True)
     instagram = Column(String, nullable=True)
     linkedin = Column(String, nullable=True)

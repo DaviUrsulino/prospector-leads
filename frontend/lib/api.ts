@@ -18,6 +18,7 @@ export type Lead = {
   link_perfil: string | null;
   favorito: boolean;
   contatado: boolean;
+  mensagem_enviada_em: string | null;
   website: string | null;
   instagram: string | null;
   linkedin: string | null;
@@ -88,6 +89,26 @@ export async function alternarContatado(buscaId: string, leadId: string, valor: 
   });
   if (!resp.ok) {
     throw new Error(`Falha ao marcar contatado: ${resp.status}`);
+  }
+  return resp.json();
+}
+
+export async function dispararMensagemLead(buscaId: string, leadId: string): Promise<Lead> {
+  const resp = await fetch(`${API_URL}/buscas/${buscaId}/leads/${leadId}/disparar`, {
+    method: "POST",
+  });
+  if (!resp.ok) {
+    throw new Error(`Falha ao disparar mensagem: ${resp.status}`);
+  }
+  return resp.json();
+}
+
+export async function dispararMensagemBusca(buscaId: string): Promise<{ total: number; disparando: number; ja_enviados: number; sem_numero: number }> {
+  const resp = await fetch(`${API_URL}/buscas/${buscaId}/disparar`, {
+    method: "POST",
+  });
+  if (!resp.ok) {
+    throw new Error(`Falha ao disparar busca: ${resp.status}`);
   }
   return resp.json();
 }

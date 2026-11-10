@@ -1,13 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { alternarContatado, alternarFavorito, type Lead } from "@/lib/api";
+import { alternarContatado, alternarFavorito, dispararMensagemBusca, dispararMensagemLead, type Lead } from "@/lib/api";
 
 export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsIniciais: Lead[] }) {
   const [leads, setLeads] = useState(leadsIniciais);
   const [filtro, setFiltro] = useState("");
   const [soFavoritos, setSoFavoritos] = useState(false);
   const [soNaoContatados, setSoNaoContatados] = useState(false);
+  const [disparandoLead, setDisparandoLead] = useState<string | null>(null);
+  const [disparandoBatch, setDisparandoBatch] = useState(false);
+  const [batchStatus, setBatchStatus] = useState<string | null>(null);
 
   const totalContatados = leads.filter((l) => l.contatado).length;
 
@@ -46,6 +49,32 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
     }
   }
 
+  async function handleDispararLead(leadId: string) {
+    setDisparandoLead(leadId);
+    try {
+      const leadAtualizado = await dispararMensagemLead(buscaId, leadId);
+      setLeads((prev) => prev.map((l) => (l.id === leadId ? leadAtualizado : l)));
+    } catch {
+      alert("Falha ao disparar mensagem. Verifique a configuração do WhatsApp.");
+    } finally {
+      setDisparandoLead(null);
+    }
+  }
+
+  async function handleDispararBatch() {
+    if (!confirm("Disparar mensagem para todos os leads sem envio anterior?")) return;
+    setDisparandoBatch(true);
+    setBatchStatus(null);
+    try {
+      const status = await dispararMensagemBusca(buscaId);
+      setBatchStatus(`Disparando para ${status.disparando} leads. Já enviados: ${status.ja_enviados}. Sem número: ${status.sem_numero}.`);
+    } catch {
+      setBatchStatus("Falha ao iniciar disparo. Verifique a configuração do WhatsApp.");
+    } finally {
+      setDisparandoBatch(false);
+    }
+  }
+
   async function toggleFavorito(leadId: string, novoValor: boolean) {
     setLeads((prev) =>
       prev.map((l) => (l.id === leadId ? { ...l, favorito: novoValor } : l))
@@ -63,6 +92,29 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
     <div className="card">
       <div style={{ marginBottom: "0.75rem", fontSize: "0.875rem", color: "var(--color-text-muted, #9ca3af)" }}>
         {totalContatados} de {leads.length} contatados
+      </div>
+      <div style={{ marginBottom: "0.75rem", display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+        <button
+          onClick={handleDispararBatch}
+          disabled={disparandoBatch}
+          style={{
+            padding: "0.4rem 0.9rem",
+            background: disparandoBatch ? "#374151" : "#16a34a",
+            color: "#fff",
+            border: "none",
+            borderRadius: "0.375rem",
+            cursor: disparandoBatch ? "not-allowed" : "pointer",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+          }}
+        >
+          {disparandoBatch ? "Disparando..." : "📤 Disparar para todos"}
+        </button>
+        {batchStatus && (
+          <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted, #9ca3af)" }}>
+            {batchStatus}
+          </span>
+        )}
       </div>
       <div className="table-controls">
         <input
@@ -98,6 +150,7 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
             <tr>
               <th></th>
               <th>Contatado</th>
+              <th>Enviar</th>
               <th>Nome</th>
               <th>Telefone</th>
               <th>WhatsApp direto</th>
@@ -120,6 +173,31 @@ export function LeadsTable({ buscaId, leadsIniciais }: { buscaId: string; leadsI
                     title={lead.contatado ? "Desmarcar contatado" : "Marcar como contatado"}
                     style={{ width: "1rem", height: "1rem", cursor: "pointer", accentColor: "#ca8a04" }}
                   />
+                </td>
+                <td style={{ textAlign: "center" }}>
+                  {lead.mensagem_enviada_em ? (
+                    <span
+                      title={`Enviada em ${new Date(lead.mensagem_enviada_em + "Z").toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}`}
+                      style={{ fontSize: "1rem" }}
+                    >
+                      ✅
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => handleDispararLead(lead.id)}
+                      disabled={disparandoLead === lead.id || !(lead.whatsapp_direto || lead.telefone)}
+                      title={lead.whatsapp_direto || lead.telefone ? "Enviar mensagem" : "Sem número"}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: lead.whatsapp_direto || lead.telefone ? "pointer" : "not-allowed",
+                        fontSize: "1rem",
+                        opacity: lead.whatsapp_direto || lead.telefone ? 1 : 0.3,
+                      }}
+                    >
+                      {disparandoLead === lead.id ? "⏳" : "📤"}
+                    </button>
+                  )}
                 </td>
                 <td>
                   <button

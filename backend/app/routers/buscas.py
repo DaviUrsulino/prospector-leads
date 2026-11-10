@@ -1,8 +1,11 @@
+import asyncio
 import csv
 import io
 import math
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -10,7 +13,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.database import get_db
+from app.database import SessionLocal, get_db
+from app.services import whatsapp
 from app.services.dedup import filtrar_leads_novos, remover_duplicatas_do_lote
 from app.services.enrichment import enriquecer_leads, ordenar_por_completude
 from app.services.osm_fallback import buscar_leads_osm
@@ -164,6 +168,81 @@ def set_favorito(busca_id: str, lead_id: str, valor: bool, db: Session = Depends
     db.commit()
     db.refresh(lead)
     return lead
+
+
+class _DisparoStatus(BaseModel):
+    total: int
+    sem_numero: int
+    ja_enviados: int
+    disparando: int
+
+
+@router.post("/{busca_id}/leads/{lead_id}/disparar", response_model=schemas.LeadEncontradoOut)
+async def disparar_lead(busca_id: str, lead_id: str, db: Session = Depends(get_db)):
+    lead = (
+        db.query(models.LeadEncontrado)
+        .filter(models.LeadEncontrado.id == lead_id, models.LeadEncontrado.busca_id == busca_id)
+        .first()
+    )
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead não encontrado")
+
+    numero = lead.whatsapp_direto or lead.telefone
+    if not numero:
+        raise HTTPException(status_code=400, detail="Lead sem número de contato")
+
+    await whatsapp.enviar_mensagens(numero, lead.nome)
+    lead.mensagem_enviada_em = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(lead)
+    return lead
+
+
+async def _disparar_em_lote(lead_ids: list[str]) -> None:
+    for i, lead_id in enumerate(lead_ids):
+        db = SessionLocal()
+        try:
+            lead = db.query(models.LeadEncontrado).filter(models.LeadEncontrado.id == lead_id).first()
+            if not lead or lead.mensagem_enviada_em:
+                continue
+            numero = lead.whatsapp_direto or lead.telefone
+            if not numero:
+                continue
+            await whatsapp.enviar_mensagens(numero, lead.nome)
+            lead.mensagem_enviada_em = datetime.now(timezone.utc)
+            db.commit()
+        except Exception:
+            pass
+        finally:
+            db.close()
+        if i < len(lead_ids) - 1:
+            await asyncio.sleep(8)
+
+
+@router.post("/{busca_id}/disparar")
+async def disparar_busca(
+    busca_id: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+):
+    busca = db.query(models.Busca).filter(models.Busca.id == busca_id).first()
+    if not busca:
+        raise HTTPException(status_code=404, detail="Busca não encontrada")
+
+    sem_numero = sum(1 for l in busca.leads if not l.whatsapp_direto and not l.telefone)
+    ja_enviados = sum(1 for l in busca.leads if l.mensagem_enviada_em is not None)
+    pendentes = [
+        l.id
+        for l in busca.leads
+        if l.mensagem_enviada_em is None and (l.whatsapp_direto or l.telefone)
+    ]
+
+    background_tasks.add_task(_disparar_em_lote, pendentes)
+
+    return _DisparoStatus(
+        total=len(busca.leads),
+        sem_numero=sem_numero,
+        ja_enviados=ja_enviados,
+        disparando=len(pendentes),
+    )
 
 
 @router.delete("/{busca_id}", status_code=204)

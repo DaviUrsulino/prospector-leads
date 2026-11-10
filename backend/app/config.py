@@ -7,6 +7,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000", "http://localhost:3001"]
     enrichment_timeout_seconds: float = 5.0
     enrichment_concurrency: int = 5
+    evolution_api_url: str | None = None
+    evolution_api_key: str | None = None
+    evolution_instance: str = "vivavoz"
 
     class Config:
         env_file = ".env"
