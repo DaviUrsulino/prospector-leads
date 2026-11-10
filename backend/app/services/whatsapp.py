@@ -29,7 +29,7 @@ async def enviar_mensagens(numero: str, nome: str) -> None:
     headers = {"apikey": settings.evolution_api_key}
     url = f"{settings.evolution_api_url}/message/sendText/{settings.evolution_instance}"
 
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=None) as client:
         for i, template in enumerate(_TEMPLATE):
             texto = template.format(nome=nome)
             resp = await client.post(url, json={"number": numero_fmt, "text": texto}, headers=headers)
