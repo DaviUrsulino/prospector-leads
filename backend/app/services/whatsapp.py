@@ -12,7 +12,7 @@ _BLOCOS = [
     "Olá {nome}, {saudacao}!",
     "Meu nome é Gerliane Fernandes, sou coordenadora do Viva Voz Podcast, aqui em Brasília. 📍",
     "Entrei em contato para apresentar o nosso podcast e convidar os profissionais aí para participarem dos próximos episódios.",
-    "A proposta é um bate-papo leve sobre a área de atuação de vocês — compartilhando informações de valor com o público e ampliando a visibilidade do trabalho desenvolvido.",
+    "A proposta é um bate-papo leve sobre a área de atuação de vocês, compartilhando informações de valor com o público e ampliando a visibilidade do trabalho desenvolvido.",
     "Posso te passar mais detalhes sobre a proposta?",
 ]
 
