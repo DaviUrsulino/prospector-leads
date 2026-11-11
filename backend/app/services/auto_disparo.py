@@ -76,37 +76,46 @@ async def executar_disparo_diario() -> None:
         termo_outro = random.choice(TERMOS_OUTROS)
         leads_saude = await _buscar_e_salvar(termo_saude, 20, db)
         leads_outros = await _buscar_e_salvar(termo_outro, 20, db)
-        leads = leads_saude + leads_outros
+        # Extrai dados em dicts antes de fechar a session
+        leads = [
+            {"id": l.id, "nome": l.nome, "numero": l.whatsapp_direto or l.telefone}
+            for l in (leads_saude + leads_outros)
+        ]
         random.shuffle(leads)
+        n_saude = len(leads_saude)
+        n_outros = len(leads_outros)
     finally:
         db.close()
 
     logger.info(
         f"Disparo automático: {len(leads)} leads "
-        f"({len(leads_saude)} saúde [{termo_saude}] + {len(leads_outros)} outros [{termo_outro}])"
+        f"({n_saude} saúde [{termo_saude}] + {n_outros} outros [{termo_outro}])"
     )
 
     for i, lead in enumerate(leads):
-        # Para se já passou das 18h
         agora = datetime.now(timezone.utc).astimezone()
         if agora.hour >= 18:
             logger.info("Horário limite atingido (18:00), encerrando disparo.")
             break
 
+        lead_id = lead["id"]
+        numero = lead["numero"]
+        nome = lead["nome"]
+
+        if not numero:
+            continue
+
         db = SessionLocal()
         try:
-            numero = lead.whatsapp_direto or lead.telefone
-            if not numero:
-                continue
-            lead_db = db.query(LeadEncontrado).filter(LeadEncontrado.id == lead.id).first()
+            lead_db = db.query(LeadEncontrado).filter(LeadEncontrado.id == lead_id).first()
             if not lead_db or lead_db.mensagem_enviada_em:
                 continue
-            await whatsapp.enviar_mensagens(numero, lead_db.nome)
+            await whatsapp.enviar_mensagens(numero, nome)
             lead_db.mensagem_enviada_em = datetime.now(timezone.utc)
             db.commit()
-            logger.info(f"[{i+1}/{len(leads)}] Enviado: {lead_db.nome}")
+            logger.info(f"[{i+1}/{len(leads)}] Enviado: {nome}")
         except Exception as exc:
-            logger.error(f"Erro lead {lead.id}: {exc}")
+            logger.error(f"Erro lead {lead_id} ({nome}): {exc}")
         finally:
             db.close()
 
