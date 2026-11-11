@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import SessionLocal, get_db
 from app.services import whatsapp
+from app.services.auto_disparo import executar_disparo_diario
 from app.services.dedup import filtrar_leads_novos, remover_duplicatas_do_lote
 from app.services.enrichment import enriquecer_leads, ordenar_por_completude
 from app.services.osm_fallback import buscar_leads_osm
@@ -243,6 +244,13 @@ async def disparar_busca(
         ja_enviados=ja_enviados,
         disparando=len(pendentes),
     )
+
+
+@router.post("/disparar-agora", status_code=202)
+async def disparar_agora(background_tasks: BackgroundTasks):
+    """Dispara o ciclo automático imediatamente (sem esperar o agendamento diário)."""
+    background_tasks.add_task(executar_disparo_diario)
+    return {"status": "iniciado"}
 
 
 @router.delete("/{busca_id}", status_code=204)

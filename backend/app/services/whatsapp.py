@@ -19,7 +19,6 @@ _BLOCOS = [
 _SAUDACAO = {
     range(5, 12): "bom dia ☀️",
     range(12, 18): "boa tarde 🌤",
-    range(18, 24): "boa noite 🌙",
 }
 
 
