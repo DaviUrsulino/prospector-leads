@@ -42,6 +42,8 @@ async def _enviar_texto(numero_fmt: str, texto: str) -> None:
     payload = {"number": numero_fmt, "text": texto}
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(url, json=payload, headers=headers)
+        if not resp.is_success:
+            raise ValueError(f"Evolution API {resp.status_code}: {resp.text[:300]}")
         resp.raise_for_status()
 
 
