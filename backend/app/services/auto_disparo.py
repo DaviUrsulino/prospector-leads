@@ -19,17 +19,25 @@ from app.services.places import buscar_leads
 logger = logging.getLogger(__name__)
 
 TERMOS_SAUDE = [
-    "médico", "dentista", "psicólogo", "fisioterapeuta", "nutricionista",
-    "oftalmologista", "dermatologista", "cardiologista", "ortopedista",
-    "pediatra", "ginecologista", "neurologista", "endocrinologista",
-    "urologista", "otorrinolaringologista", "clínica médica",
+    "Dentista",
+    "Médico",
+    "Veterinária",
+    "Esteticista",
 ]
 
 TERMOS_OUTROS = [
-    "advogado", "contador", "arquiteto", "engenheiro civil", "corretor de imóveis",
-    "personal trainer", "fotógrafo", "designer gráfico", "consultor de negócios",
-    "coach", "veterinário", "academia", "escola de idiomas", "estúdio de pilates",
-    "clínica de estética", "barbearia", "salão de beleza",
+    "Advogado",
+    "Contador",
+    "Consultor Financeiro",
+    "BPO Financeiro",
+    "Escola",
+    "Construção Civil",
+    "Engenharia",
+    "Arquitetura",
+    "Curso Online",
+    "Consultoria em Gestão",
+    "Recursos Humanos",
+    "Serviços Automotivos",
 ]
 
 # Entre contatos: 5-15 min aleatório
