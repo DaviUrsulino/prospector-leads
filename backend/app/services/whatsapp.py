@@ -16,17 +16,16 @@ _BLOCOS = [
     "Posso te passar mais detalhes sobre a proposta?",
 ]
 
-_SAUDACAO = {
-    range(5, 12): "bom dia ☀️",
-    range(12, 18): "boa tarde 🌤",
-}
-
-
 def _saudacao() -> str:
-    hora = datetime.now(timezone.utc).astimezone().hour
-    for intervalo, texto in _SAUDACAO.items():
-        if hora in intervalo:
-            return texto
+    agora = datetime.now(timezone.utc).astimezone()
+    hora = agora.hour
+    minuto = agora.minute
+    # bom dia: até 12:30
+    if (hora < 12) or (hora == 12 and minuto <= 30):
+        return "bom dia ☀️"
+    # boa tarde: 12:30 até 18:00
+    if hora < 18:
+        return "boa tarde 🌤"
     return "olá"
 
 
