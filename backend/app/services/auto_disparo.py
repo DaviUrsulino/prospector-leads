@@ -37,7 +37,6 @@ TERMOS_OUTROS = [
     "Curso Online",
     "Consultoria em Gestão",
     "Recursos Humanos",
-    "Serviços Automotivos",
 ]
 
 # Entre contatos: 5-15 min aleatório
